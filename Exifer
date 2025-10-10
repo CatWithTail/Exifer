@@ -2,45 +2,49 @@
 
 #Defaults:
 
-Mask="_D,D"
-Type="JPG,jpg,NEF,nef"
+
+Mask="D*NEF"
+C=0
+Folder=''
+
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --mask)
-      mask="$2"
+    --mask|-m)
+      Mask="$2"
       shift 2
       ;;
-    --type)
-      type="$2"
+    --folder|-f)
+      Folder="$2"
       shift 2
       ;;
     --help|-h)
-      echo "Usage: $0 --mask <pattern> --type <type>"
-      echo "example: $0 --mask D --type JPG"
-      echo "or:"
-      echo "example: $0 "'--mask "D,_D,dsc" --type "JPG,jpg,NEF,nef"'
+      echo "Usage: $0 --mask <pattern> --folder <Folder>"
+      echo "example: $0 --mask"'"D*NEF"' --folder "/tmp/DSC/"
       exit 0
       ;;
     *)
       echo "❌ unexpected : $1"
-      echo "try: $0 --mask <pattern> --type <type>"
+      echo "try: $0 --mask <pattern>"
       exit 1
       ;;
   esac
 done
 
+MainRun () {
+  CounterT=$(ls $Folder$Mask | wc -w)
+  for f in $Folder$Mask; do
+    [ -e "$f" ] || continue
+    ((C++))
+    echo "$C of $CounterT"
+    datetime=$(exiftool -s -s -s -DateTimeOriginal $f | tr ":\| " ".")
+    if [ -n "$datetime" ]; then
+      mv -v "$f" "${datetime}_${f}"
+    else
+      echo "⚠️ No EXIF DATE for $f"
+    fi
+  done
+}
 
 
-
-for f in {$Mask}*{$Type}; do
-  [ -e "$f" ] || continue
-  echo $f
-  datetime=$(exiftool -s -s -s -DateTimeOriginal $f | tr ":\| " ".")
-  if [ -n "$datetime" ]; then
-    mv -v "$f" "${datetime}_${f}"
-  else
-    echo "⚠️ No EXIF DATE for $f"
-  fi
-
-done
+MainRun 
