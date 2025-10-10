@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for f in {_D,D}*{JPG,jpg,NEF,nef}; do
+  [ -e "$f" ] || continue
+  echo $f
+  exiftool -s -s -s -DateTimeOriginal DSC_4508.NEF | tr ":\| " "."
+
+done
