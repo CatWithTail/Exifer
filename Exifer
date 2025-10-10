@@ -1,8 +1,14 @@
 #!/bin/bash
 
+
 for f in {_D,D}*{JPG,jpg,NEF,nef}; do
   [ -e "$f" ] || continue
   echo $f
-  exiftool -s -s -s -DateTimeOriginal DSC_4508.NEF | tr ":\| " "."
+  datetime=$(exiftool -s -s -s -DateTimeOriginal DSC_4508.NEF | tr ":\| " ".")
+  if [ -n "$datetime" ]; then
+    mv -v "$f" "${datetime}_${f}"
+  else
+    echo "⚠️ No EXIF DATE for $f"
+  fi
 
 done
