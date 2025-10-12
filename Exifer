@@ -8,6 +8,8 @@ C=0
 Folder=''
 
 
+#Inputs:
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mask|-m)
@@ -31,17 +33,34 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-MainRun () {
-  CounterT=$(ls $Folder$Mask | wc -w)
-  for f in $Folder$Mask; do
+MainRun() {
+  local Folder="${1:-.}"
+  local Mask="${2:-*}"
+
+  Folder="${Folder%/}/"
+  shopt -s nullglob
+
+  local Files=("$Folder"$Mask)
+  local CounterT=${#Files[@]}
+  local C=0
+
+  echo "📂 Folder: $Folder"
+  echo "🔍 Found $CounterT files matching: $Mask"
+  echo
+
+  for f in "${Files[@]}"; do
     [ -e "$f" ] || continue
+    [ -d "$FILE" ] && continue
     ((C++))
-    echo "$C of $CounterT"
-    datetime=$(exiftool -s -s -s -DateTimeOriginal $f | tr ":\| " ".")
+    printf "[%02d/%02d] %s\n" "$C" "$CounterT" "$f"
+
+    datetime=$(exiftool -s -s -s -DateTimeOriginal "$f" | tr ' :|' '.')
     if [ -n "$datetime" ]; then
-      mv -v "$f" "${datetime}_${f}"
+      basename=$(basename "$f")
+      newname="${Folder}${datetime}_${basename}"
+      mv -v "$f" "$newname"
     else
-      echo "⚠️ No EXIF DATE for $f"
+      echo "⚠️  No EXIF date for $f"
     fi
   done
 }
