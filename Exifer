@@ -1,15 +1,12 @@
 #!/bin/bash
+set -euo pipefail
+shopt -s nullglob
 
-#Defaults:
-
-
+# === Defaults ===
 Mask="D*NEF"
-C=0
-Folder=''
+Folder="." 
 
-
-#Inputs:
-
+# === Parse args ===
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mask|-m)
@@ -21,26 +18,23 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --help|-h)
-      echo "Usage: $0 --mask <pattern> --folder <Folder>"
-      echo "example: $0 --mask"'"D*NEF"' --folder "/tmp/DSC/"
+      echo "Usage: $0 [--mask <pattern>] [--folder <path>]"
+      echo "Example: $0 --mask 'D*NEF' --folder '/tmp/DSC/'"
       exit 0
       ;;
     *)
-      echo "❌ unexpected : $1"
-      echo "try: $0 --mask <pattern>"
+      echo "❌ Unexpected argument: $1"
+      echo "Try: $0 --help"
       exit 1
       ;;
   esac
 done
 
+# === Main function ===
 MainRun() {
-  local Folder="${1:-.}"
-  local Mask="${2:-*}"
+  Folder="${Folder%/}"
 
-  Folder="${Folder%/}/"
-  shopt -s nullglob
-
-  local Files=("$Folder"$Mask)
+  local Files=("$Folder"/$Mask)
   local CounterT=${#Files[@]}
   local C=0
 
@@ -50,14 +44,14 @@ MainRun() {
 
   for f in "${Files[@]}"; do
     [ -e "$f" ] || continue
-    [ -d "$FILE" ] && continue
+    [ -d "$f" ] && continue
     ((C++))
     printf "[%02d/%02d] %s\n" "$C" "$CounterT" "$f"
 
     datetime=$(exiftool -s -s -s -DateTimeOriginal "$f" | tr ' :|' '.')
     if [ -n "$datetime" ]; then
       basename=$(basename "$f")
-      newname="${Folder}${datetime}_${basename}"
+      newname="${Folder}/${datetime}_${basename}"
       mv -v "$f" "$newname"
     else
       echo "⚠️  No EXIF date for $f"
@@ -65,5 +59,4 @@ MainRun() {
   done
 }
 
-
-MainRun 
+MainRun
