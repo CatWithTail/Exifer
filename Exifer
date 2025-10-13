@@ -1,6 +1,4 @@
 #!/bin/bash
-set -euo pipefail
-shopt -s nullglob
 
 # === Defaults ===
 Mask="D*NEF"
@@ -41,6 +39,10 @@ MainRun() {
   echo "📂 Folder: $Folder"
   echo "🔍 Found $CounterT files matching: $Mask"
   echo
+
+  echo  "List of files:"
+  echo " ${Files[@]}"
+  echo "======"
 
   for f in "${Files[@]}"; do
     [ -e "$f" ] || continue
