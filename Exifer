@@ -3,36 +3,39 @@
 # === Defaults ===
 Mask="D*NEF"
 Folder="." 
+Recursive="-maxdepth 1"
+Debug=false
+DryRun=false
 
+Tools="mdls exiftool"
 
-Tools="exiftool mdls"
-
-# === Helpers ===
+# === Functions ===
 
 GetHelp() {
   echo "Usage: $0 [--mask <pattern>] [--folder <path>]"
   echo "Examples:"
-  echo "  $0                       # Run in the current folder, filemask is $Mask"
+  echo "  $0                       # Run in the current folder only, filemask is $Mask"
   echo "  $0 --mask '*.jpg'        # jpg-files in the current folder"
+  echo "  $0 --R                   # Recursive run, subfolders will be affected"
   echo "  $0 -f /tmp/photos        # D*NEF in /tmp/photos"
   echo "  $0 -m '*.png' -n         # DryRun"
   exit 0
 }
 
 CheckUtils() {
-  if command -v $1 >/dev/null 2>&1 ; then
+  if command -v $1 >/dev/null 2>&1;
+    then
       echo "$1 found."
       Util=$1
       break
-  else
+    else
       echo "$1 not found"
   fi
 }
 
 GetUtil() {
   for Tool in $Tools; do 
-    echo $Tool
-  CheckUtils $Tool
+    CheckUtils $Tool
   done
   if [[ -z $Util ]];
     then
@@ -44,6 +47,62 @@ GetUtil() {
       echo ""
       exit 1
   fi
+}
+
+GetDate() {
+  case "$Util" in
+    exiftool)
+      exiftool -s -s -s -DateTimeOriginal "$1" | tr ' :|' '.'
+      ;;
+    mdls)
+      mdls -raw -name kMDItemContentCreationDate "$1" | cut -f 1,2 -d " "  | tr ' :|-' '.'
+      ;;
+    *)
+      echo "❌ Can't get a data from exif"
+      exit 1
+      ;;
+  esac
+}
+
+GetTheFileList() 
+{
+  Folder="${Folder%/}"
+  echo "Looking for $Mask files in $Folder ..."
+  FileList=$(find $Folder $Recursive -name "$Mask")
+  TotalFiles=$(echo "$FileList" | wc -w | tr -s ' ')
+  echo "Found:      $TotalFiles"
+}
+
+ProcessingFiles()
+{
+  local C=0
+  local newname=""
+  for f in $FileList
+    do
+      ((C++))
+      ExifDate=$(GetDate $f)
+      if [ -n "$ExifDate" ]
+        then
+          if $Debug
+            then
+              echo "$C of $TotalFiles - $f"
+              echo "Debug info:"
+              echo "Filename is $(dirname $f)"
+              echo "ExifDate is ${ExifDate}"
+              echo "Basename is $(basename $f)"
+              echo "***"
+          fi
+          newname="$(dirname $f)/${ExifDate}_$(basename $f)"
+          if $DryRun
+            then
+              echo "$C  of $TotalFiles : $f 👉 Would rename to: $newname"
+            else
+              mv -v $f $newname
+          fi
+        else
+          echo "⚠️  No EXIF date for $f"
+      fi
+  done
 }
 
 # === Parse args ===
@@ -62,9 +121,12 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --recursive|-R)
-      #Recursive=true
-      echo "I don't want to have it here, but maybe I will add this shing in future. "
-      GetHelp
+      Recursive=""
+      shift
+      ;;
+    --debug)
+      Debug=true
+      shift
       ;;
     --help|-h)
       GetHelp
@@ -79,38 +141,9 @@ done
 
 # === Main function ===
 MainRun() {
-  Folder="${Folder%/}"
-
-  local Files=("$Folder"/$Mask)
-  local CounterT=${#Files[@]}
-  local C=0
-
-  echo "📂 Folder: $Folder"
-  echo "🔍 Found $CounterT files matching: $Mask"
-  echo
-
-  echo  "List of files:"
-  echo " ${Files[@]}"
-  echo "======"
-
-  for f in "${Files[@]}"; do
-    [ -e "$f" ] || continue
-    [ -d "$f" ] && continue
-    ((C++))
-    printf "[%02d/%02d] %s\n" "$C" "$CounterT" "$f"
-
-    datetime=$(exiftool -s -s -s -DateTimeOriginal "$f" | tr ' :|' '.')
-    if [ -n "$datetime" ]; then
-      basename=$(basename "$f")
-      newname="${Folder}/${datetime}_${basename}"
-      if $DryRun; then
-        echo " $basename 👉 Would rename to: $newname"
-      else
-        mv -v "$f" "$newname"
-      fi    else
-      echo "⚠️  No EXIF date for $f"
-    fi
-  done
+  GetUtil
+  GetTheFileList
+  ProcessingFiles
 }
-GetUtil
+
 MainRun
