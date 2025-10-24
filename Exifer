@@ -4,6 +4,48 @@
 Mask="D*NEF"
 Folder="." 
 
+
+Tools="exiftool mdls"
+
+# === Helpers ===
+
+GetHelp() {
+  echo "Usage: $0 [--mask <pattern>] [--folder <path>]"
+  echo "Examples:"
+  echo "  $0                       # Run in the current folder, filemask is $Mask"
+  echo "  $0 --mask '*.jpg'        # jpg-files in the current folder"
+  echo "  $0 -f /tmp/photos        # D*NEF in /tmp/photos"
+  echo "  $0 -m '*.png' -n         # DryRun"
+  exit 0
+}
+
+CheckUtils() {
+  if command -v $1 >/dev/null 2>&1 ; then
+      echo "$1 found."
+      Util=$1
+      break
+  else
+      echo "$1 not found"
+  fi
+}
+
+GetUtil() {
+  for Tool in $Tools; do 
+    echo $Tool
+  CheckUtils $Tool
+  done
+  if [[ -z $Util ]];
+    then
+      echo "No one utuil from the list:"
+      echo "    $Tools"
+      echo "has been found"
+      echo ""
+      echo "Have one of them installed before the next run, please!"
+      echo ""
+      exit 1
+  fi
+}
+
 # === Parse args ===
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -15,10 +57,17 @@ while [[ $# -gt 0 ]]; do
       Folder="$2"
       shift 2
       ;;
+    --dry-run|-n)
+      DryRun=true
+      shift
+      ;;
+    --recursive|-R)
+      #Recursive=true
+      echo "I don't want to have it here, but maybe I will add this shing in future. "
+      GetHelp
+      ;;
     --help|-h)
-      echo "Usage: $0 [--mask <pattern>] [--folder <path>]"
-      echo "Example: $0 --mask 'D*NEF' --folder '/tmp/DSC/'"
-      exit 0
+      GetHelp
       ;;
     *)
       echo "❌ Unexpected argument: $1"
@@ -54,11 +103,14 @@ MainRun() {
     if [ -n "$datetime" ]; then
       basename=$(basename "$f")
       newname="${Folder}/${datetime}_${basename}"
-      mv -v "$f" "$newname"
-    else
+      if $DryRun; then
+        echo " $basename 👉 Would rename to: $newname"
+      else
+        mv -v "$f" "$newname"
+      fi    else
       echo "⚠️  No EXIF date for $f"
     fi
   done
 }
-
+GetUtil
 MainRun
