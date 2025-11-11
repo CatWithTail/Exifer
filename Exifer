@@ -27,13 +27,13 @@ GetHelp() {
 
 GetUtil() {
   for Tool in $Tools; do 
-    if command -v $1 >/dev/null 2>&1;
+    if command -v $Tool >/dev/null 2>&1;
       then
         echo "$Tool found."
         Util=$Tool
         break
       else
-        echo "$1 not found"
+        echo "$Tool not found"
     fi
   done
   if [[ -z $Util ]];
