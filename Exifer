@@ -25,20 +25,16 @@ GetHelp() {
   exit 0
 }
 
-CheckUtils() {
-  if command -v $1 >/dev/null 2>&1;
-    then
-      echo "$1 found."
-      Util=$1
-      break
-    else
-      echo "$1 not found"
-  fi
-}
-
 GetUtil() {
   for Tool in $Tools; do 
-    CheckUtils $Tool
+    if command -v $1 >/dev/null 2>&1;
+      then
+        echo "$Tool found."
+        Util=$Tool
+        break
+      else
+        echo "$1 not found"
+    fi
   done
   if [[ -z $Util ]];
     then
