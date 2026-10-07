@@ -4,7 +4,7 @@ A little script I love to use for my photos organising.
 
 How to install: 
 
-git clone git@github.com:CatWithTail/Exifer.git
+git clone https://github.com/CatWithTail/Exifer.git
 
 and then 
 
