@@ -3,15 +3,12 @@
 A little script I love to use for my photos organising. 
 
 How to install: 
-{{{
-git clone
-}}}
+
+git clone git@github.com:CatWithTail/Exifer.git
 
 and then 
 
-{{{
 sudo cp -rfp Exifer/Exifer /usr/local/bin/
-}}}
 
 
 How to use: 
